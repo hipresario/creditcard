@@ -82,19 +82,89 @@ def logisticRegression():
                             )
     lr.fit(X_train, y_train)
 
+    # drawing training cumulative chart
+    lr_proba = lr.predict_proba(X_train)
+    train_pred = lr.predict(X_train)
+    proba_actual = getPairValues(lr_proba, train_pred, y_train)
+    plot_data = calCumulativeSum(proba_actual)
+    plotGainChart(plot_data, 'Logistic Regression')
+
     scores = cross_val_score(lr, X_train, y_train, cv=5)
     print(lr.coef_)
     print(scores)
+
     lr_preds = lr.predict(X_test)
+
     score = accuracy_score(y_test, lr_preds)
     print(score)
     c1 = confusion_matrix(y_test, lr_preds, labels=[1, 0])
     print(c1)
 
+    # drawing test cumulative chart
+    lr_proba_test = lr.predict_proba(X_test)
+    test_pred = lr.predict(X_test)
+    proba_actual_test = getPairValues(lr_proba_test, test_pred, y_test)
+    plot_data_test = calCumulativeSum(proba_actual_test)
+    plotGainChart(plot_data_test, 'Logistic Regression')
+
     lr_fpr, lr_tpr, lr_threholds = roc_curve(y_test, lr_preds)
     lr_auc = auc(lr_fpr, lr_tpr)
 
     return lr_fpr, lr_tpr, lr_auc
+
+def getPairValues(lr_proba, train_pred, y_train):
+    probas = []
+    for proba in lr_proba:
+        probas.append(proba[1])
+
+    proba_actual = pd.DataFrame().assign(
+        Proba=probas,
+        Pred=train_pred,
+        Actual=y_train
+    ).sort_values(['Proba'], ascending=[False])
+
+    return proba_actual
+
+def calCumulativeSum(df):
+    total = len(df['Actual'])
+    length = len(df[df['Actual'] == 1])
+    bin1 = 0
+    bin2 = 0
+    bin3 = 0
+    bin4 = 0
+    bin5 = 0
+    bin6 = 0
+    bin7 = 0
+    bin8 = 0
+    bin9 = 0
+    bin10 = 0
+    for row_id, row in enumerate(df.values):
+        if row[0] == 1:
+            if row_id < 1200:
+                bin1 += 1
+            if row_id < 2400:
+                bin2 += 1
+            if row_id < 3600:
+                bin3 += 1
+            if row_id < 4800:
+                bin4 += 1
+            if row_id < 6000:
+                bin5 += 1
+            if row_id < 7200:
+                bin6 += 1
+            if row_id < 8400:
+                bin7 += 1
+            if row_id < 9600:
+                bin8 += 1
+            if row_id < 10800:
+                bin9 += 1
+            if row_id < total:
+                bin10 += 1
+
+    return [bin1/length, bin2/length,
+                bin3/length, bin4/length, bin5/length,
+                bin6/length, bin7/length, bin8/length, bin9/length, bin10/length
+                ]
 
 def gridSearchCV(rf, X_train, y_train):
     rf = RandomForestClassifier(
@@ -134,11 +204,18 @@ def randomForest():
                                 class_weight='balanced', warm_start=False
                                 )
 
-
     # change above rf parameters and run grid search
     #gridSearchCV(rf, X_train, y_train)
 
     rf.fit(X_train, y_train)
+
+    # drawing training cumulative chart
+    rf_proba = rf.predict_proba(X_train)
+    train_pred = rf.predict(X_train)
+    proba_actual = getPairValues(rf_proba, train_pred, y_train)
+    plot_data = calCumulativeSum(proba_actual)
+    plotGainChart(plot_data, 'Random Forest')
+
     scores = cross_val_score(rf, X_train, y_train, cv=5)
     print(scores)
     preds = rf.predict(X_test)
@@ -149,6 +226,13 @@ def randomForest():
     c2 = confusion_matrix(y_test, preds, labels=[1, 0])
     print(c2)
 
+    # drawing test cumulative chart
+    rf_proba_test = rf.predict_proba(X_test)
+    test_pred = rf.predict(X_test)
+    proba_actual_test = getPairValues(rf_proba_test, test_pred, y_test)
+    plot_data_test = calCumulativeSum(proba_actual_test)
+    plotGainChart(plot_data_test, 'Random Forest')
+
     rf_fpr, rf_tpr, rf_threholds = roc_curve(y_test, preds)
     rf_auc = auc(rf_fpr, rf_tpr)
 
@@ -158,9 +242,16 @@ def mlp():
     print('mlp')
 
     X_train, y_train, X_test, y_test = readData()
-    mlp = MLPClassifier(alpha=1e-5, hidden_layer_sizes=(100,), random_state=10,
+    mlp = MLPClassifier(alpha=1e-5, hidden_layer_sizes=(80,1), random_state=10,
                         solver='adam', tol=0.000001, verbose=False, warm_start=False)
     mlp.fit(X_train, y_train)
+
+    # drawing training cumulative chart
+    mlp_proba = mlp.predict_proba(X_train)
+    train_pred = mlp.predict(X_train)
+    proba_actual = getPairValues(mlp_proba, train_pred, y_train)
+    plot_data = calCumulativeSum(proba_actual)
+    plotGainChart(plot_data, 'MLP')
 
     scores = cross_val_score(mlp, X_train, y_train, cv=5)
     print(scores)
@@ -172,6 +263,13 @@ def mlp():
     c2 = confusion_matrix(y_test, predictions, labels=[1, 0])
     print(c2)
 
+    # drawing test cumulative chart
+    mlp_proba_test = mlp.predict_proba(X_test)
+    test_pred = mlp.predict(X_test)
+    proba_actual_test = getPairValues(mlp_proba_test, test_pred, y_test)
+    plot_data_test = calCumulativeSum(proba_actual_test)
+    plotGainChart(plot_data_test, 'MLP')
+
     mlp_fpr, mlp_tpr, mlp_threholds = roc_curve(y_test, predictions)
     mlp_auc = auc(mlp_fpr, mlp_tpr)
 
@@ -181,9 +279,21 @@ def svm():
     print('svm')
 
     X_train, y_train, X_test, y_test = readData()
-    svc = LinearSVC(C=0.05, random_state=10, class_weight='balanced'
-              )
+    # svc = LinearSVC(C=0.05, random_state=10, class_weight='balanced'
+    #           )
+
+    svc = SVC(C=0.05, kernel='rbf', degree=3, probability=True,
+              cache_size=200, class_weight="balanced",
+              random_state=10)
+
     svc.fit(X_train, y_train)
+
+    # drawing training cumulative chart
+    svc_proba = svc.predict_proba(X_train)
+    train_pred = svc.predict(X_train)
+    proba_actual = getPairValues(svc_proba, train_pred, y_train)
+    plot_data = calCumulativeSum(proba_actual)
+    plotGainChart(plot_data, 'SVM')
 
     scores = cross_val_score(svc, X_train, y_train, cv=5)
     print(scores)
@@ -194,6 +304,13 @@ def svm():
 
     c2 = confusion_matrix(y_test, predictions, labels=[1, 0])
     print(c2)
+
+    # drawing test cumulative chart
+    svc_proba_test = svc.predict_proba(X_test)
+    test_pred = svc.predict(X_test)
+    proba_actual_test = getPairValues(svc_proba_test, test_pred, y_test)
+    plot_data_test = calCumulativeSum(proba_actual_test)
+    plotGainChart(plot_data_test, 'SVM')
 
     svm_fpr, svm_tpr, svm_threholds = roc_curve(y_test, predictions)
     svm_auc = auc(svm_fpr, svm_tpr)
@@ -206,6 +323,14 @@ def naiveBayes():
     X_train, y_train, X_test, y_test = readData()
     nb = GaussianNB()
     nb.fit(X_train, y_train)
+
+    # drawing training cumulative chart
+    nb_proba = nb.predict_proba(X_train)
+    train_pred = nb.predict(X_train)
+    proba_actual = getPairValues(nb_proba, train_pred, y_train)
+    plot_data = calCumulativeSum(proba_actual)
+    plotGainChart(plot_data, 'Naive Bayes')
+
     scores = cross_val_score(nb, X_train, y_train, cv=5)
     print(scores)
 
@@ -215,6 +340,13 @@ def naiveBayes():
 
     c2 = confusion_matrix(y_test, predictions, labels=[1, 0])
     print(c2)
+
+    # drawing test cumulative chart
+    nb_proba_test = nb.predict_proba(X_test)
+    test_pred = nb.predict(X_test)
+    proba_actual_test = getPairValues(nb_proba_test, test_pred, y_test)
+    plot_data_test = calCumulativeSum(proba_actual_test)
+    plotGainChart(plot_data_test, 'Naive Bayes')
 
     nb_fpr, nb_tpr, nb_threholds = roc_curve(y_test, predictions)
     nb_auc = auc( nb_fpr, nb_tpr)
@@ -243,6 +375,20 @@ def compareWithROC():
     plt.legend(loc='best')
     plt.show()
     print('Save and close image to continue...')
+
+def plotGainChart(data, title):
+    plt.figure('Cumulative Gain Chart')
+    plt.autoscale(False)
+    base = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    data.insert(0, 0)
+    area = auc(base, data)
+    # plot the cumulative function
+    plt.plot(base, data, label='Area = %0.2f' % area)
+    plt.title('Cumulative Gains of Default (' + title + ')')
+    plt.xlabel('Percentage of data')
+    plt.ylabel('Cumulative gains')
+    plt.legend(loc='lower right')
+    plt.show()
 
 def main():
     #logisticRegression()
